@@ -2054,23 +2054,27 @@ end function
 globals.metexpreter.getsystem = function(params)
     if globals.session.type != "shell" then return print_error("Onyl shell sessions can perform this command")
 
-    print_info("Try to get /etc/passwd...")
-    passwd = get_file(globals.session.shell, "/etc/passwd", true)
+    if params.join(" ").indexOf("--pass") == null then
+        print_info("Try to get /etc/passwd...")
+        passwd = get_file(globals.session.shell, "/etc/passwd", true)
 
-    if typeof(passwd) != "file" or not passwd.has_permission("r") then return print_error("No /etc/passwd file permissions")
+        if typeof(passwd) != "file" or not passwd.has_permission("r") then return print_error("No /etc/passwd file permissions")
 
-    print_good("/etc/passwd readable!")
-    print_info("Try to get root hash...")
-    if not passwd or not passwd.get_content then return print_error("Unable to get root hash")
-    root_passwd = passwd.get_content.split("\n")[0].split(":")[1]
+        print_good("/etc/passwd readable!")
+        print_info("Try to get root hash...")
+        if not passwd or not passwd.get_content then return print_error("Unable to get root hash")
+        root_passwd = passwd.get_content.split("\n")[0].split(":")[1]
 
-    if not root_passwd then return print_error("Unable to get root hash")
+        if not root_passwd then return print_error("Unable to get root hash")
 
-    print_good("Root hash -> " + root_passwd)
-    print_info("Attempt to decipher root hash...")
-    root_passwd = globals.metexpreter.decipher([root_passwd])
+        print_good("Root hash -> " + root_passwd)
+        print_info("Attempt to decipher root hash...")
+        root_passwd = globals.metexpreter.decipher([root_passwd])
 
-    if not root_passwd then  return print_error("Unable to decipher root hash")
+        if not root_passwd then  return print_error("Unable to decipher root hash")
+    else
+        root_passwd = params[-1]
+    end if
 
     print_info("Write reverse shell code on remote machine...")
     getsystemcode = "get_custom_object.reverse_shell = get_shell(""root"", """ + root_passwd + """)"
